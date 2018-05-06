@@ -106,3 +106,6 @@ venv.bak/
 # text editor
 .idea
 .idea/*
+
+# For now ignore sample data
+*.csv

@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'django-simple-imports',
+    'django_extensions',
+
+    'django_simple_imports',
+    #: TODO: Test whether this needs to be installed if you only want to run tests
+    'django_simple_imports.sample_app'
 ]
 
 MIDDLEWARE = [
