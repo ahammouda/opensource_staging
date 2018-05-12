@@ -5,7 +5,7 @@ django-simple-imports
 Adam Hammouda
 
 ##### Sponsor
-This project begain with the generous sponsorship of [Bridge Financial Technology](https://github.com/bridgeft)
+This project begain with the generous sponsorship of [Bridge Financial Technology](http://www.bridgeft.com/about/)
 
 ##### License
 BSD 2-Clause "Simplified" License.
@@ -26,19 +26,18 @@ must be maintained during import.
 
 * ModelImporter (import_configuration_v2.py)
 
-* ImportManager (import_managers.py)
+* ImportManager (import_managers_v3.py)
 
-* SystemImporter (system_importer.py)
+* SystemImporter (system_importer_v2.py)
 
 
 ##### Requirements
 * (N.B: Subject to testing):  python 3.6 -- ordering of dependencies effect topological sort outcomes and must remain static
 
 ##### Status And Limitations
-* Things are 'working' as is (working defined as:
-* Can only import (i.e. create) one object at a time -- all other field elements must point to dependent references
-  [We call this one element the 'root' element to stick with graph theory terminology])
-
+* Creating objects with m2m dependencies will have require at least O(n) trips to the database. 
+This appears to be a limitation of the django ORM however - will nee to do a bit more research 
+to confirm.
 
 ##### TODO (High Wave Number):
 2.) Implement updates (table stakes)
