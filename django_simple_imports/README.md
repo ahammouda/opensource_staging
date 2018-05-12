@@ -1,9 +1,6 @@
 django-simple-imports
 =====================
 
-##### Authors
-Adam Hammouda
-
 ##### Sponsor
 This project began with the generous sponsorship of [Bridge Financial Technology](http://www.bridgeft.com/)
 
