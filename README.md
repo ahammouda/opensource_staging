@@ -5,7 +5,7 @@ django-simple-imports
 Adam Hammouda
 
 ##### Sponsor
-This project begain with the generous sponsorship of [Bridge Financial Technology](http://www.bridgeft.com/)
+This project began with the generous sponsorship of [Bridge Financial Technology](http://www.bridgeft.com/)
 
 ##### License
 BSD 2-Clause "Simplified" License.
@@ -20,7 +20,7 @@ A data import library for the django ORM.  Allows for richness in foreigkey ('da
 constraint specification for imports, that other libraries struggle with (see prior work).  
 There are extensive ambitions for this library, but for now aims to simply solve the problem of 
 bulk importing rows for a single model, given an arbitray depth of depency relationships that 
-must be maintained during import.
+must be maintained/referenced during import.
 
 ##### Main Pieces
 
@@ -32,30 +32,15 @@ must be maintained during import.
 
 
 ##### Requirements
-* (N.B: Subject to testing):  python 3.6 -- ordering of dependencies effect topological sort outcomes and must remain static
+* python 3.6 -- ordering of dependencies effect topological sort outcomes and must remain static
 
 ##### Status And Limitations
-* Creating objects with m2m dependencies will have require at least O(n) trips to the database. 
+* Creating objects with m2m dependencies will require at least O(n) trips to the database. 
 This appears to be a limitation of the django ORM however - will nee to do a bit more research 
 to confirm.
 
-##### TODO (High Wave Number):
-2.) Implement updates (table stakes)
-
-3.) Derive methods bulk-getting dependent imports, before mapping their fks into the relevant objects
-    -->  First thought here: maybe derive some manual caching layer that the importer_mananger references??
-
-4.) Test performance to see if it's as fast as some custom 'getter'
-
-5.) Eventually implement interactive prompt to infer dependencies of desired set of tables to import (i.e:
-    auto-generate transitive closure of a couple of models)
-
-
-##### Table Stakes
-* Exception handling in importer_manager (if referenced object not found, etc --> should spit out specification for importing that object alone
-
-
-##### Deal with while documenting
-* Verify possible topological sort issues (ensure uniqueness, etc), and constraints to put in place:
+##### TODO
+* Exception handling in importer_manager (if referenced object not found, etc --> should log informative error message
+* Verify/prove possible topological sort issues (ensure uniqueness, etc), and constraints to put in place:
   https://math.stackexchange.com/questions/2051092/unique-topological-sort-for-dag
 * Implement an iterative dfs in sorter.py (to avoid recurision depth issues)
