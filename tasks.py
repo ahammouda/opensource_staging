@@ -27,7 +27,7 @@ from typing import *
 import random,string
 
 from django_bulk_update.helper import bulk_update
-from django_simple_imports.simple_imports.system_importer import SystemImporter
+from django_simple_imports.simple_imports.system_importer_v2 import SystemImporter
 from django_simple_imports.sample_app.importers import ImageImporter,TagImporter,UserProfileImporter,\
     UserImporter,CompanyImporter
 
@@ -69,57 +69,6 @@ def test_importer(ctx, filepath):
     #             importers[i]
 
 
-@task()
-def test_import_manager(ctx):
-    from django_simple_imports.sample_app.importers import UserImporter
-    from django_simple_imports.simple_imports.importer_manager_v2 import ImporterManager
-    N_OBJS = 4
-
-    manager = ImporterManager(importer=UserImporter())
-
-    #: Create a bunch of usernames associated with stored Users
-    usernames = []
-    for i in range(N_OBJS):
-        uname = ''.join(random.choices(population=string.ascii_uppercase+string.ascii_uppercase,k=4))
-        User.objects.create(
-            username = uname, email=f'{uname}@gmail.com', first_name = 'Foo', last_name = 'manchu'
-        )
-        usernames.append(uname)
-
-    for name in usernames:
-        manager.add_kv(field_name='username',value=name)
-
-    import pdb; pdb.set_trace()
-
-    manager.get_available_rows()
-    for i in range(N_OBJS):
-        objs = manager.get_objs(i)
-        assert objs[0]['available'] == True
-        assert objs[0]['obj']
-        assert objs[0]['query']
-
-    # #: ********************  Create a many to many example  ********************
-    # tag_slugs = 'CWMT;IAOQ;NTCG;CRFE;VRKC;CIES;HVXH;PTXN;ZCRD;VQAZ;XGVO;KKKU;BXRG;MARY;KJAB;CIMV;QUXQ;QLVF;ABXW;ROYN'\
-    #     .split(';')
-    # manager = ImporterManager(importer=UserImporter())
-    #
-    # #: Create a bunch of usernames associated with stored Users
-    # usernames = []
-    # for i in range(N_OBJS):
-    #     uname = ''.join(random.choices(population=string.ascii_uppercase+string.ascii_uppercase,k=4))
-    #     User.objects.create(
-    #         username = uname, email=f'{uname}@gmail.com', first_name = 'Foo', last_name = 'manchu'
-    #     )
-    #     usernames.append(uname)
-    #
-    # for name in usernames:
-    #     manager.add_kv({'username':name})
-    #
-    # manager.get_available_rows()
-    # for i in range(N_OBJS):
-    #     objs = manager.get_objs(i)
-    #     assert objs[0]['available']
-    #     assert objs[0]['']
 
 @task()
 def setup(ctx, outdir, updates = False):
@@ -166,16 +115,24 @@ def setup(ctx, outdir, updates = False):
 @task()
 def import_example_set(ctx, dirpath = ''):
     #: This is where the importers need to be given, and the importer invoked
+    from django_simple_imports.simple_imports.model_importer import ModelImporter
     roll_back_import_example(ctx)
 
+    if not dirpath:
+        dirpath = os.getcwd()
+
     filepath = setup(ctx,outdir=dirpath)
+
+    importers: List[ModelImporter] = [ImageImporter,TagImporter,UserProfileImporter,UserImporter,CompanyImporter]
+
     master_importer = SystemImporter(
-        importers=[ImageImporter(),TagImporter(),UserProfileImporter(),UserImporter(),CompanyImporter()],
+        importers=importers,
         csvfilepath=filepath
     )
 
     master_importer.import_data()
-    import pdb; pdb.set_trace()
+    master_importer.get_new_objects()
+    print('Done.')
     # #: TODO: Implement these getters
     # create_data = master_importer.get_creates()
     # update_data = master_importer.get_updates()

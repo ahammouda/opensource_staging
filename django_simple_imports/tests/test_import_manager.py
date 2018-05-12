@@ -6,8 +6,7 @@ from django_simple_imports.simple_imports.importer_manager_v2 import ImporterMan
 from django_simple_imports.sample_app.importers import UserImporter
 
 
-
-class TestSimpleImporterManager(TestCase):
+class TestImporterManager(TestCase):
 
     def setUp(self):
         #: The user model is used in these examples for no particular reason other than, it has no dependencies
@@ -21,17 +20,6 @@ class TestSimpleImporterManager(TestCase):
                 username = uname, email=f'{uname}@gmail.com', first_name = 'Foo', last_name = 'manchu'
             )
             self.usernames.append(uname)
-
-        # #: Create n_objs Company's to simulated a many to many
-        # self.natural_ids = []
-        # base_models = []
-        # for i in range(self.n_objs):
-        #     nid = ''.join(random.choices(population=string.ascii_uppercase+string.ascii_uppercase,k=3))
-        #     self.natural_ids.append(nid)
-        #     base_models.append(
-        #         Company(natural_id=nid)
-        #     )
-        # Company.objects.bulk_create(base_models)
 
     def test_all_objects_returned(self):
         manager = ImporterManager(importer=UserImporter())
@@ -62,11 +50,10 @@ class TestSimpleImporterManager(TestCase):
         manager.add_kv(field_name='username',value=self.usernames[3])
         manager.increment_row()
 
-        import pdb; pdb.set_trace()
         manager.get_available_rows()
 
         for i in range(2):
-            objs = manager.get_objs(i) #: Returns a list of objects only if manytomany
+            objs = manager.get_objs(i)
             for j in range(2):
                 self.assertEqual(objs[j]['available'], True)
                 self.assertIsNotNone(objs[j]['obj'])
@@ -100,3 +87,13 @@ class TestSimpleImporterManager(TestCase):
             self.assertIsNotNone(objs[0]['query'])
 
         del manager
+
+    def test_multiple_fields_for_m2m(self):
+        #: TODO: Given some standard for reading in multiple fields for a m2m object
+        pass
+
+    def test_validate_logs_error(self):
+        pass
+
+    def test_(self):
+        pass

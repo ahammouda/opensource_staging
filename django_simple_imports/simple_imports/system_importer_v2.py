@@ -8,12 +8,13 @@ from dotdict import DotDict
 
 from .sorter import Sorter
 from .model_importer import ModelImporter
-from .importer_manager_v2 import ImporterManager
+from .importer_manager_v3 import ImporterManager
 
 import pdb
 
 #: TODO: Document the necessity of these being differently
 M2M_DELIMITER = ';'
+M2M_FIELD_DELIMITER = '|'
 DEFAULT_DELIMITER = ','
 
 class SystemImporter:
@@ -42,6 +43,8 @@ class SystemImporter:
 
         self.importers_to_manager: Dict[ModelImporter,ImporterManager] = {}
         """:type:dict[ModelImporter:ImportManager]"""
+
+        self.importers_to_verticies: Dict[ModelImporter,DotDict[str, object]] = {}
 
         self.create_model = None
         """:type:models.Model"""
@@ -82,13 +85,16 @@ class SystemImporter:
 
         for i,vertex in enumerate(self.importers):
             self.graph.append(DotDict({
-                'id':i,
-                'Adj':[],
-                'p':None,
-                'color':"WHITE",
-                'd':0,
-                'f':0,
-                'importer':vertex
+                'id': i,
+                'Adj': [],
+                'p': None,
+                'color': "WHITE",
+                'd': 0,
+                'f': 0,
+                'importer': vertex,
+                #: Discloses whether this vertex in the graph is m2m to any others (will be set by vertices with
+                #: dependent imports back to it)
+                'is_m2m': False
             }))
 
         #: Once this for loop is complete, circle back and add to the Adjacencies
@@ -100,18 +106,19 @@ class SystemImporter:
             if not neighbors:
                 continue
 
-            #pdb.set_trace()
             for field,importer in neighbors.items(): #: This is deterministic and therefore the results are.
                 inner_vertex = next((x for x in self.graph if x.importer==importer),None)
                 assert inner_vertex is not None
                 vertex.Adj.append(self.graph[inner_vertex.id])
 
+                #: Tell the vertex that it is many-2-many with respect to itself
+                if self.is_many_to_many(field,vertex.importer.model):
+                    self.graph[inner_vertex.id].is_m2m = True
 
     def _topologically_sort_graph(self):
         sorter = Sorter()
         sorter.dfs(self.graph)
         self.sorted_vertices = sorter.sorted_vertices
-
 
     def _initialize_managers(self):
         for i,v in enumerate(self.sorted_vertices):
@@ -127,8 +134,9 @@ class SystemImporter:
             )
             self.importers_to_manager[v.importer] = self.managers[i]
 
-        self.create_model = self.sorted_vertices[-1].importer.model
+            self.importers_to_verticies[v.importer] = v
 
+        self.create_model = self.sorted_vertices[-1].importer.model
 
     def _get_import_fields(self):
         fields = ""
@@ -157,74 +165,71 @@ class SystemImporter:
 
     def import_data(self):
         #: TODO: Make it so you don't need to assume there's no header
+        # Loop 1: Extract data from file, and prep importer managers to pull related data from disk
         for row,line in enumerate(self.lines):
 
-            visited_managers = set()
             fields = line.split(DEFAULT_DELIMITER)
 
             #: Iterate accross row of csv file
             for i,value in enumerate(fields):
                 _field = self.location_to_csv_field[i]
-                if i<len(self.location_to_importer):
-                    _importer = self.location_to_importer[i]
-                else:
-                    #: TODO:  This should be done only if the object has required fields <- it could be that
-                    #:(TODO)  this last field is of a related object of the create model
-                    self.candidate_objects.append(self.create_model())
-                    setattr(self.candidate_objects[row],_field,value)
+                _importer = self.location_to_importer[i]
 
                 #region Handle Parsing out M2M relationships if present
-                if self.is_many_to_many(_field):
+                if self.importers_to_verticies[_importer].is_m2m:
+
                     m2m_refs = value.split(M2M_DELIMITER)
-                    for ref in m2m_refs:
-                        self.importers_to_manager[_importer].add_kv(_field, ref)
+                    for col,ref in enumerate(m2m_refs):
+                        self.importers_to_manager[_importer].update_kvs(
+                            field_name=_field, value=ref, row=row, col=col
+                        )
+
                 #endregion
-
-                #: TODO: Shouldn't this not be called if _field is_m2m
-                self.importers_to_manager[_importer].add_kv(_field, value.replace('\n',''))
-
-                # if self.importers_to_manager[_importer].ready:
-                #     visited_managers.add(self.importers_to_manager[_importer])
-
-            # #: You should be able to build up objects that had any 'getter' dependencies contained in the csv import
-            # for manager in self.managers:
-            #     if manager in visited_managers:
-            #         continue
-            #
-            #     for fname, importer in manager.importer.dependent_imports.items():
-            #         manager.add_kv(fname, self.importers_to_manager[importer].get_object())
-            #
-            # #: At this point root level obect won't exist b/c no other object depends on it.
-            # #: Add the new populated object to the list of objects to create:
-            # self.new_objects.append(
-            #     self.managers[-1].get_object()
-            # )
-            #
-            # #: Reset managers/manager state machines
-            # visited_managers.clear()
-            # for manager in self.managers:
-            #     manager.reset_row()
-
-        # Read from DB:
-        for manager in self.importers_to_manager.values():
-            manager.get_available_rows()
-
-        # Map available related data to object being imported
-        for model_instance in self.candidate_objects:
-            for manager in self.importers_to_manager.values():
-                #: TODO:
-                # for row in range(len(self.lines)):
-                objs = manager.get_objs() #: row
-                available_objs = [obj['obj'] for obj in objs if obj['available']]
-                if len(objs) !=len(available_objs):
-                    print(f'TODO: Log which kv pairs could not retreive objects')
-                    # find some
-                    break;
-                #: TODO: Need some attribute to related manager dictionary
-                if len(objs)>1:
-                    setattr(model_instance,self.manager_to_attribute[manager],available_objs)
                 else:
-                    setattr(model_instance,self.manager_to_attribute[manager],available_objs[0])
+                    self.importers_to_manager[_importer].update_kvs(
+                        _field, value.replace('\n',''), row=row
+                    )
+
+        #: TODO: Maybe combine loop 2 and 3 <-- there separation is maybe only useful for readability
+        # Loop 2: Get all the related data from for the leaf nodes of the dependency tree
+        for i,vertex in enumerate(self.sorted_vertices):
+
+            if vertex.importer.dependent_imports is not None:
+                break;
+
+            else:
+                self.importers_to_manager[
+                    vertex.importer
+                ].get_available_rows()
+
+        # Loop 3: Work your way up the dependency tree
+        for i,vertex in enumerate(self.sorted_vertices):
+
+            if vertex.importer.dependent_imports is None:
+                continue
+
+            for fname, _importer in vertex.importer.dependent_imports.items():
+
+                _manager = self.importers_to_manager[_importer]
+
+                for row in range(_manager.get_latest_row() + 1): #range is exclusive of upper bound
+                    #: Get objects, or log an error (TODO - check for errors as below - maybe put the task in a function)
+                    objects = self.importers_to_manager[_importer].get_objs(row=row)
+                    if len(objects)>1:
+                        self.importers_to_manager[vertex.importer].update_kvs(
+                            field_name=fname, value=objects, row=row
+                        )
+                    else:
+                        self.importers_to_manager[vertex.importer].update_kvs(
+                            field_name=fname, value=objects[0], row=row
+                        )
+
+            #: Now that your dependencies should be satisfied, get data from disk to enable the next row
+            if not self.importers_to_manager[ vertex.importer ].create:
+                self.importers_to_manager[ vertex.importer ].get_available_rows()
 
     def store_data(self):
         self.create_model.objects.bulk_create(self.new_objects)
+
+    def get_new_objects(self):
+        self.importers_to_manager[ self.sorted_vertices[-1].importer ].get_objects_from_rows()

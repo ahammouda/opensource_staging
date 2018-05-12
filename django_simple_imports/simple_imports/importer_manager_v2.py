@@ -17,6 +17,16 @@ class ImporterManager(object):
     The add_kv() function transitions a state machine, and increments the main data structure (self.kvs)
 
     self.kvs is used to populated self.object_row_map which is the data structure accessed from outside this model
+
+
+    Some invariants:
+    *  A row will have more than 1 dictionary entry, if and only if, an importer depending on its associated manager
+       depends on it through a m2m relationship
+
+    Termination conditions (of external algorithm in system_importer):
+    *  Every row/col in the kvs table has a corresponding value associated with every field in:
+              - self.importer.required_fields
+              - self.importer.dependent_imports
     """
 
     def __init__(self, importer: ModelImporter=None, create: bool=False):
@@ -27,6 +37,7 @@ class ImporterManager(object):
         #: N.B: Right now, this isn't really used
         self.create = create
 
+        # TODO: Rename to self.current_row
         self.row = 0
 
         self.kvs = defaultdict(list)
@@ -36,13 +47,15 @@ class ImporterManager(object):
 
         self.current_kvs = {}
 
-    def add_kv(self,field_name,value):
-        typed_value = value
+    def add_kv(self, field_name, value):
 
-        if field_name in self.importer.field_types.keys():
-            typed_value = lookup_helpers.get_typed_value(
-                self.importer.field_types[field_name],value
-            )
+        typed_value = lookup_helpers.get_typed_value(
+            self.importer.field_types[field_name],value
+        )
+
+        # For many to many filters
+        if isinstance(typed_value,list):
+            field_name = f'{field_name}__in'
 
         self.current_kvs.update({field_name:typed_value})  #: value can just be an object (like another base importer object)
 
@@ -59,13 +72,36 @@ class ImporterManager(object):
             )
             self.reset_state()
 
+    def update_kvs(self, field_name, value, row, col=0):
+        """
+        This is a non 'state machine' way to update self.kvs
+        """
+        typed_value = lookup_helpers.get_typed_value(
+            self.importer.field_types[field_name],value
+        )
+
+        # For many to many filters
+        if isinstance(typed_value,list):
+            field_name = f'{field_name}__in'
+
+        if self.kvs[row]:
+            self.kvs[row][col].update({field_name: typed_value})
+        else:
+            self.kvs[row].append({field_name: typed_value})
+
     def reset_state(self):
         self.current_kvs.clear()
         self.ready = False
 
     def increment_row(self):
+        if self.current_kvs:
+            self.kvs[self.row].append(
+                deepcopy(self.current_kvs)
+            )
+            self.reset_state()
+
         #: This is incremented externally, because it is from that perspective that it will be known whether
-        #: one is managing
+        #: one is managing something that is many to many or not
         self.row += 1
 
     def get_available_rows(self):
@@ -76,6 +112,9 @@ class ImporterManager(object):
         with
         Before you were getting related objects row by row, so now that you get them all at once in the last row, you
         need another iteration over each row system_importer_v2
+
+        TODO: This method needs some improvement in code readability
+              * Should document limitations with using m2m fields
         """
         if not self.kvs:
             return None
@@ -106,5 +145,22 @@ class ImporterManager(object):
                 self.object_row_map[row][i]['available'] = True if obj else False
                 self.object_row_map[row][i]['obj'] = obj
 
-    def get_objs(self,row: int) -> List[Dict]:
+    def get_objects_from_rows(self):
+        """
+        This is really going to be for the 'root' object (i.e. the object actually getting imported).
+        As far as this class is used by the system importer, this function is highly specific
+        """
+        if not self.create:
+            return ;
+
+        objects = []
+        for row in range(self.row):
+
+            objects.append(
+                self.importer.model(**self.kvs[row][0])
+            )
+
+        return objects
+
+    def get_objs(self, row: int) -> List[Dict]:
         return self.object_row_map[row]
