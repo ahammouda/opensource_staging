@@ -5,7 +5,7 @@ django-simple-imports
 Adam Hammouda
 
 ##### Sponsor
-This project begain with the generous sponsorship of [Bridge Financial Technology](http://www.bridgeft.com/about/)
+This project begain with the generous sponsorship of [Bridge Financial Technology](http://www.bridgeft.com/)
 
 ##### License
 BSD 2-Clause "Simplified" License.
