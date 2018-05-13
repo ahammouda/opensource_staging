@@ -14,7 +14,7 @@ setup(
     include_package_data=True,
     license='BSD License',
     description='Import data for Django models specified by arbitrarily complex dependency structures.',
-    long_description=README.md,
+    long_description=README,
     url='https://github.com/ahammouda/django_simple_imports',
     author='Adam Hammouda',
     author_email='adamhammouda3@gmail.com',
