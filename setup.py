@@ -33,6 +33,7 @@ setup(
     ],
     # Taken from pip freeze
     install_requires=[
+        'Django>=2.0',
         'python-dateutil>=2.7.0',
         'flexible-dotdict>=0.2.1',
         'pytz>=2018.3',
