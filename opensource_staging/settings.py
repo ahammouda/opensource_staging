@@ -42,7 +42,7 @@ INSTALLED_APPS = [
 
     'django_simple_imports',
     #: TODO: Test whether this needs to be installed if you only want to run tests
-    'django_simple_imports.sample_app'
+    'django_simple_imports.tests_app'
 ]
 
 MIDDLEWARE = [

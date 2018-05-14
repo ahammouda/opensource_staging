@@ -14,6 +14,8 @@ import pdb
 
 #: TODO: Document the necessity of these being differently
 M2M_DELIMITER = ';'
+# I think this is unnecesary, if you want multiple fields to be specifiable,
+# you need to put them in separate chuncks of 'a;a;a;a , b;b;b;b'
 M2M_FIELD_DELIMITER = '|'
 DEFAULT_DELIMITER = ','
 
