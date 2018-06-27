@@ -26,11 +26,6 @@ I would highly recommend exploring this library while considering ours - they ma
 ##### Requirements
 * python 3.6 -- ordering of dependencies effect topological sort outcomes and must remain static
 
-##### Status And Limitations
-* Creating objects with m2m dependencies will require at least O(n) trips to the database. 
-This appears to be a limitation of the django ORM however - will nee to do a bit more research 
-to confirm.
-
 ##### TODO
 * Exception handling in importer_manager (if referenced object not found, etc --> should log informative error message
 * Implement an iterative dfs in sorter.py (to avoid recurision depth issues)
