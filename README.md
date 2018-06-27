@@ -19,6 +19,8 @@ There are extensive ambitions for this library, but for now aims to simply solve
 bulk importing rows for a single model, given an arbitray depth of depency relationships that 
 must be maintained/referenced during import.
 
+Check out the [this animation](https://raasama-concept.herokuapp.com/draw-re-sim) for a basic idea of what the tool does.  It's a work in progress
+
 ##### Main Pieces
 
 * ModelImporter (import_configuration_v2.py)
