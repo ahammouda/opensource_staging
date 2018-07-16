@@ -8,7 +8,7 @@ There are extensive ambitions for this library, but for now aims to simply solve
 bulk importing rows for a single model, given an arbitray depth of depency relationships that 
 must be maintained/referenced during import.
 
-Check out the [this animation](https://raasama-concept.herokuapp.com/draw-re-sim) for a basic idea of what the tool does.  It's a work in progress
+Check out the [this animation](http://raasama.s3-website-us-east-1.amazonaws.com) for a basic idea of what the tool does.  It's a work in progress
 
 #### Prior Work
 There are a number of different tools which work to make import/export a generic problem for the django ORM, 
