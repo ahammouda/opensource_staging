@@ -27,12 +27,14 @@ from typing import *
 import random,string
 
 from django_bulk_update.helper import bulk_update
+
+from django_simple_imports.simple_imports.model_importer import ModelImporter
 from django_simple_imports.simple_imports.system_importer_v2 import SystemImporter
-from django_simple_imports.sample_app.importers import ImageImporter,TagImporter,UserProfileImporter,\
+from django_simple_imports.tests_app.importers import ImageImporter,TagImporter,UserProfileImporter,\
     UserImporter,CompanyImporter
 
 from django.contrib.auth.models import User
-from django_simple_imports.sample_app.models import UserProfile,Company,Tag
+from django_simple_imports.tests_app.models import UserProfile,Company,Tag
 
 
 @task()
@@ -53,7 +55,7 @@ def setup_import_examples(ctx):
 
 @task()
 def test_importer(ctx, filepath):
-    from django_simple_imports.sample_app.importers import UserImporter,UserProfileImporter,CompanyImporter,\
+    from django_simple_imports.tests_app.importers import UserImporter,UserProfileImporter,CompanyImporter,\
         TagImporter
 
     importers = [UserImporter(),UserProfileImporter(),CompanyImporter(),TagImporter()]

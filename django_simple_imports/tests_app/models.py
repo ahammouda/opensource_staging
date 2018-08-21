@@ -41,11 +41,7 @@ class Image(models.Model):
     name = models.CharField(max_length=255,null=False)
     path = models.CharField(max_length=255,null=False)
 
-# #: For
-#
-# class ExampleBaseModel(models.Model):
-#     slug = models.CharField(max_length=255,null=False)
-#
-# class ExampleManyToManyModel(models.Model):
-#     slug = models.CharField(max_length=255,null=False)
-#     base_relation = models.ManyToManyField(ExampleBaseModel)
+
+class Document(models.Model):
+    slug = models.CharField(max_length=255,null=False)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)

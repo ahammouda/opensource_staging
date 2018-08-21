@@ -40,8 +40,9 @@ INSTALLED_APPS = [
 
     'django_extensions',
 
-    'django_simple_imports',
-    #: TODO: Test whether this needs to be installed if you only want to run tests
+    # Only necessary if you desire to run the tests
+    # Migrate eventually to:
+    #  - https://docs.djangoproject.com/en/2.0/internals/contributing/writing-code/unit-tests/#isolating-model-registration
     'django_simple_imports.tests_app'
 ]
 
