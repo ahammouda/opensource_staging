@@ -1,6 +1,5 @@
-
 from django.contrib.auth.models import User
-from django_simple_imports.sample_app.models import UserProfile,Company,Tag
+from django_simple_imports.tests_app.models import UserProfile,Company,Tag
 
 def create_base_models():
     user = User.objects.create(
